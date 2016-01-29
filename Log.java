@@ -1,7 +1,7 @@
-package phase1;
+package phase2;
 /**
  * @author Varun Iyer
- * @version 1.1
+ * @version 2.1
  * @param date - accepts the date of a current entry
  * @param item - accepts the current item name
  * @param cost - accepts the expense done on the current day
@@ -35,4 +35,8 @@ public class Log {
 	public int getCost() {
 		return cost;
 	}
+
+	
+	
+	
 }
