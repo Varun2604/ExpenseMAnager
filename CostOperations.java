@@ -1,15 +1,15 @@
-package phase1;
+package phase2;
 
 import java.util.StringTokenizer;
 
 /**
  * @author Varun Iyer
- * @version 1.1
+ * @version 2.1
  * @param budget - stores the budget of the month
  * @param expense - stores the expenses done till date, in that particular month
  * @param dat - object of class Data(), in package phase1
  */
-public class CostOperations {
+public class CalcOperations {
 
 	public boolean budgetCheck(int budget, int expense, int cost) {
 		if(budget < (expense + cost))
