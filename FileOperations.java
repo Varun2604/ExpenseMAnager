@@ -1,4 +1,4 @@
-package phase1;
+package phase2;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -6,92 +6,87 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
 /**
  * @author Varun Iyer
- * @version 1.1
+ * @version 2.1
  * Deals with all the File related operation
  */
+
+/**
+ * A new method called open file, called inside the updateLogBook method, which will open the file of a particular date and month. (done)
+ * A new Log and Budget for each month should be created{
+ * >>Use a single file for storing both log and (budget + expense)
+ * >>if the file is empty,prompt for setting the budget
+ * >>Let the first value be null, null, null, budget, 0
+ * >>read the last line of the file for budget and expense details
+ * >> while updating the budget, update the last line of the file ( copy the details, delete the field, re write it)
+ *  } 
+ * Changes in the reading pattern are to be made
+ * resetLogBook method will not work, and the month and year has to be taken while attempting to reset the budget and the log 
+ * */
 public class FileOperations {
 	
-	File logBookFile = new File("LogBook.txt");
-	File budgetFile = new File("BudgetBook.txt");
+	File logBookFile;
+	File passWord = new File("password.txt");
 	Scanner input = new Scanner(System.in);
 	
-	public String readBudgetBook() throws IOException {
-		/**
-		 * Method used by enterData, to read the budget and the expense
-		 */
-		// BufferedReader to read the budget and the expense from the "Budget.txt" file
-		FileReader read = new FileReader(budgetFile);
-		BufferedReader rd = new BufferedReader(read);
-		String budgetBookData = rd.readLine();
-		rd.close();
-		return budgetBookData;
-	}
-
-	public void updateLogBook(String date, String item, int cost) throws IOException {
+	public void updateLogBook(int budget, int expense, String date, String item, int cost) throws IOException {
 		/**
 		 * Method used by enterData, to update "LogBook.txt" with the input given by the user
 		 */
 		// BufferedWriter , to append the data in the "Data.txt" file
+		logBookFile = new File("logBook" + getMonthYearName(date) + ".txt");
 		FileWriter writer = new FileWriter(logBookFile,true); 
 		BufferedWriter br = new BufferedWriter(writer);
-		br.append(date + "\t" + item + "\t" + cost );
+		if(item == "nil")
+			date = "nil";		//when the first entry for the budget has to be made, the date is registered as nil.
+		br.append(budget + "\t" + expense + "\t" + date + "\t" + item + "\t" + cost );
 		br.newLine();
 		br.close();
 	}
-
-	public void updateBudgetBook(int budget, int expense, int cost) throws IOException {
-		/**
-		 * Method used by enterData, to update "BudgetBook.txt" with the new expense
-		 */
-		FileWriter writer = new FileWriter(budgetFile);
-		BufferedWriter  br = new BufferedWriter(writer);
-		br.write(budget + " " + (expense + cost));
-		br.close();
-	}
-
-	public void updateBudgetBook(int budget) throws IOException {
-		/**
-		 * Method to set new new budget taken from the user, in "BudgetBook.txt"
-		 * Sets the expense to zero
-		 * Method calls the readBudget method from FileOperaations, and gives the user savings for the particular period
-		 */
-		char ch = 'n';
-		String temp = readBudgetBook();
-		int[] arr  = new int[2];
-		StringTokenizer st = new StringTokenizer(temp);			//StringTokenizer, used to get the total savings done, since the last budget update
-		int i = 0; 
-		while(st.hasMoreTokens())
-		{
-			arr[i] = Integer.parseInt(st.nextToken());
-			i++;
-		}
-		if(arr[1] == 0){
-			//If no expense has been made since the budget is set, if and else will make sure that the user is notified that the budget is already reset
-			//if is executed if no expenses has been made after the budget has been reset
-			System.out.print("\nNo Expenses has been made since the budget is reset.\nDo you still want to reset the budget?(y/n): ");
-			ch = input.next().charAt(0);
-			}
-		else{
-			//else is executed, when changes have been made after setting the budget
-			ch = 'y';
-			System.out.print("\nYou have reset the budget!");
-			System.out.print("\nThe Savings since the last budget update is Rs.: " + (arr[0] - arr[1]));
-		}
-		if(ch == 'y' || ch == 'Y'){
-		FileWriter writer = new FileWriter(budgetFile);
-		BufferedWriter  br = new BufferedWriter(writer);
-		br.write(budget + " " + 0);
-		br.close();	
-		}
-	}
 	
-	public ArrayList<Log> checkDate( String date) throws IOException
+	public String getBudgetData(String date) throws IOException{
+		/**
+		 * Method is used by enterLog in Manager
+		 * The method prompts the user to enter new budget, if the budget is not entered
+		 * Else, it goes to the end of the file and checks and returns the budget and the expense
+		 * */
+		logBookFile = new File("logBook" + getMonthYearName(date) + ".txt");
+		if(!logBookFile.exists()){
+			logBookFile.createNewFile();
+		}
+		FileReader read = new FileReader(logBookFile);
+		BufferedReader rd = new BufferedReader(read);
+		String budgetData = null;
+		String line, last = null;
+		if(rd.readLine() == null){
+			budgetData = null;
+		}
+		else{
+			// the while loop will give the whole last line
+			while ((line = rd.readLine()) != null) {
+				last = line;
+		    }
+			//Extract the last line with a String Tokenizer
+			String[] arr = new String[5];
+			int i = 0;
+			StringTokenizer st = new StringTokenizer(last, "\t");
+			while(st.hasMoreTokens()){
+				arr[i] = st.nextToken();
+				i++;
+			}
+			budgetData = arr[0].toString().concat(" " + arr[1].toString());
+		}	
+		rd.close();
+		return budgetData;
+		
+	}
+	public ArrayList<Log> getLog( String date) throws IOException
 	{
 		/**
 		 * Method to check if the given date exists in the file
@@ -99,6 +94,8 @@ public class FileOperations {
 		 * else, null is returned
 		 * 
 		 * */
+	
+		logBookFile = new File("logBook" + getMonthYearName(date) + ".txt");
 		FileReader read = new FileReader(logBookFile);
 		BufferedReader rd = new BufferedReader(read);
 		String temp = new String();
@@ -115,12 +112,12 @@ public class FileOperations {
 				i++;
 			}
 			
-			if(str[0].toString().equals(date))
+			if(str[2].toString().equals(date))
 			{
 				// in case the date give by the user matches with the date in the file, the details are wrapped in log, and returned to manager
-				log.setDate(str[0]);
-				log.setItem(str[1]);
-				log.setCost(Integer.parseInt(str[2]));
+				log.setDate(str[2]);
+				log.setItem(str[3]);
+				log.setCost(Integer.parseInt(str[4]));
 				list1.add(log);
 			}
 		}
@@ -128,26 +125,165 @@ public class FileOperations {
 		
 		return list1;	
 	}
-	
-	public void resetLogBook() throws IOException {
+
+	public void resetBudget(String date, int budget) throws IOException{
 		/**
-		 * Method used reset the Log Book
-		 */
-		//The file LogBook.txt is checked for entries, If any entry is present, then it is erased, else only a message telling that there is no record to be deleted is flashed.
+		 * Method gets the date and the budget from the class Manager
+		 * Resets the budget in the last line of the file, so that the new budget will be read the next time 
+		 * */
+
+		String last = "";
+		String line = "";
+		logBookFile = new File("logBook" + getMonthYearName(date) + ".txt");
+		
 		FileReader read = new FileReader(logBookFile);
 		BufferedReader rd = new BufferedReader(read);
-		if( rd.readLine() != null){
-			// BufferedWriter , to reset the log in the "LogBook.txt" file
-			FileWriter writer = new FileWriter(logBookFile); 
-			BufferedWriter br = new BufferedWriter(writer);
-			br.close();
-			System.out.print("\nAll previous records have been erased!");
-
+		
+		while ((line = rd.readLine()) != null) {
+			last = line;
+			}
+		StringTokenizer st = new StringTokenizer(last, "\t");
+		int i = 0;
+		String[] arr = new String[5];
+		while(st.hasMoreTokens()){
+			arr[i] = st.nextToken();
+			i++;
 		}
-		else
-			System.out.print("\nThere are no previous records to be erased!");
 		rd.close();
 		
+		//Deleting the last line of the file, and add it again with the previous contents but new budget
+		RandomAccessFile f = new RandomAccessFile("logBook" + getMonthYearName(date) + ".txt", "rw");
+		long length = f.length() - 1;
+		byte b;
+		do {  
+		  // Start reading the bytes from the 2nd last byte, and read till the next linefeed character occours. Once this occours, truncate the file	
+		  length -= 1;
+		  f.seek(length);
+		  b = f.readByte();
+		} while(b != 10 && length > 0);
+		if (length == 0) { 
+		f.setLength(length);
+		} else {
+		f.setLength(length + 1);
+		}
+		f.close();
+		updateLogBook(budget, Integer.parseInt(arr[1].toString()), arr[2], arr[3], Integer.parseInt(arr[4].toString()));
+		
+	}
+	
+	public ArrayList<Log> getMonthLog(String date) throws IOException {
+		
+		logBookFile = new File("logBook" + getMonthYearName(date) + ".txt");
+		FileReader read = new FileReader(logBookFile);
+		BufferedReader rd = new BufferedReader(read);
+		String temp = new String();
+		// The data object is added to an array list
+		ArrayList<Log> list1 = new ArrayList<Log>();
+
+		while((temp = rd.readLine()) != null ){
+			Log log = new Log();
+			StringTokenizer st = new StringTokenizer(temp, "\t");
+			String[] str = new String[5];
+			int i = 0;
+			while(st.hasMoreTokens()){
+				// Store all the tokens of a particular line in str[]
+				str[i] = st.nextToken();
+				i++;
+			}
+			
+			log.setDate(str[2]);
+			log.setItem(str[3]);
+			log.setCost(Integer.parseInt(str[4]));
+			list1.add(log);
+		}
+		
+		rd.close();
+		return list1;
+	}
+	
+
+	public void deleteLog(String date) {
+		/**Method to delete a whole log Book
+		 * Date is given by the manager
+		 * */
+		
+		logBookFile = new File("logBook" + getMonthYearName(date) + ".txt");
+		boolean bool = true;
+		
+		if(logBookFile.exists())
+			bool  = logBookFile.delete();
+		
+		if(bool == true){
+			System.out.print("\nFile Deleted Successfully !");
+		}
+		else
+			System.out.print("\nFile for the particular month does not exist !");
+		
+	}
+	
+	private String getMonthYearName(String date) {
+		// method generates the month and year in the form of a string, so the particular log and budget can be maintained for a particular month, given the date 
+		
+		String name = "";
+		if(date.length() == 7)
+			date = "00/".concat(date);
+		StringTokenizer st = new StringTokenizer(date, "/");
+		int i = 0;
+		String[] arr = new String[3];
+		while(st.hasMoreTokens()){
+			arr[i] = st.nextToken();
+			i++;
+		}
+		if(date.length() == 10)
+			name = arr[1].toString().concat(arr[2].toString());
+		else if(date.length() == 8)
+			name = arr[0].toString().concat(arr[1].toString());
+		return name;
 	}
 
+	public String getPassWord() throws IOException {
+		/**
+		 * Method is used by the PassWord class
+		 * Reads the password from the password.txt and returns it to the PassWord class
+		 * */
+		//In case the password.txt is empty, the it is assumed that the user is using the product for the first time and he is prompted to check the password.txt
+		if(passWord.length() == 0)
+			System.out.print("\nPlease check the password.txt file for errors!");
+		FileReader read = new FileReader(this.passWord);
+		BufferedReader rd = new BufferedReader(read);
+		// read the password from the file password.txt and return the password
+		String pass = rd.readLine().toString().trim();
+		rd.close();
+		return pass;
+	}
+
+	public void setPassWord(String passWord) throws IOException {
+		/**
+		 * Method is used by the PassWord class
+		 * deletes the old password from the password.txt and writes the new password in it
+		 * */
+		RandomAccessFile f = new RandomAccessFile("password.txt", "rw");
+		long length = f.length() - 1;
+		byte b;
+		do {  
+		  // Start reading the bytes from the 2nd last byte, and read till the next linefeed character occours. Once this occours, truncate the file	
+		  length -= 1;
+		  f.seek(length);
+		  b = f.readByte();
+		} while(b != 10 && length > 0);
+		if (length == 0) { 
+		f.setLength(length);
+		} else {
+		f.setLength(length + 1);
+		}
+		f.close();
+		//writing the new password in the password.txt using the buffered writer
+		FileWriter writer = new FileWriter(this.passWord,true); 
+		BufferedWriter br = new BufferedWriter(writer);
+		br.write(passWord);
+		br.close();
+		System.out.print("\nYour password has been changed!");
+	}
+
+	
 }
